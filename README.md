@@ -2,6 +2,11 @@ Telecommunication Customer Churn
 
 https://customer-churn-ahmad.streamlit.app/
 
+
+
+https://github.com/user-attachments/assets/3b6018d8-ad37-4528-86ff-73d5378a9d39
+
+
 1.	Introduction:
 
 •	Background: 
