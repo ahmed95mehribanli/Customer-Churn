@@ -73,7 +73,7 @@ o	In this stage, we will create new features or transform existing features to i
 o	We will also conduct feature selection to identify the most important variables that contribute to the prediction of term deposit subscription. We will use techniques and feature importance from the selected model to select the most relevant features.
 
 •	Model Selection:
-o	In this stage, we will experiment with several classification models, including Logistic Regression, Decision Tree, Random Forest, and Gradient Boosting, and evaluate their performance using cross-validation and various performance metrics such as AUC, precision, recall, and F1 score.
+o	In this stage, we will experiment with several classification models, including Logistic Regression, Decision Tree, Random Forest, and Gradient Boosting, ADAboost,KNN, SVC and evaluate their performance using cross-validation and various performance metrics such as AUC, precision, recall, and F1 score.
 o	We will select the best performing model for further analysis based on its performance on the test dataset.
 
 •	Model Evaluation:
