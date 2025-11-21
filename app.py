@@ -2,7 +2,6 @@ import streamlit as st
 import joblib
 import numpy as np
 
-# Load the model (ensure this file is in the same directory)
 model = joblib.load('voting_classifier_model.pkl')
 
 st.set_page_config(page_title="Customer Churn Predictor", page_icon="📊")
@@ -11,7 +10,6 @@ st.markdown("Use this app to predict **customer churn** based on customer detail
 
 st.header("👤 Enter Customer Details")
 
-# --- UI FOR INPUT COLLECTION ---
 col1, col2 = st.columns(2)
 with col1:
     gender = st.selectbox("Gender", ['Male', 'Female'])
@@ -24,7 +22,6 @@ with col3:
 with col4:
     dependents = st.selectbox("Dependents", ['No', 'Yes'])
 
-# Account Information
 st.subheader("Account Information")
 tenure = st.slider("Tenure (months)", min_value=1, max_value=72, value=12)
 contract = st.selectbox("Contract", ['Month-to-month', 'One year', 'Two year'])
@@ -38,7 +35,6 @@ with col5:
 with col6:
     total_charges = st.number_input("Total Charges ($)", min_value=0.0, max_value=10000.0, value=500.0)
 
-# Services
 st.header("📱 Services & Features")
 
 col7, col8 = st.columns(2)
@@ -60,7 +56,6 @@ with col10:
     streaming_tv = st.selectbox("Streaming TV", ['No', 'Yes', 'No internet service'])
     streaming_movies = st.selectbox("Streaming Movies", ['No', 'Yes', 'No internet service'])
 
-# Payment Method
 payment_method = st.selectbox("Payment Method", [
     'Electronic check', 
     'Mailed check', 
@@ -76,7 +71,7 @@ def encode_inputs(gender, senior_citizen, partner, dependents, phone_service, mu
     # 1. Binary Features (0 or 1)
     encoded = []
     
-    # Assuming 'Female' = 1, 'Male' = 0
+    # 'Female' = 1, 'Male' = 0
     encoded.append(1 if gender == 'Female' else 0)
     
     # 'Yes' = 1, 'No' = 0 for other binary columns
@@ -88,29 +83,28 @@ def encode_inputs(gender, senior_citizen, partner, dependents, phone_service, mu
     
     # 2. Multi-Category Features (Label Encoding: 0, 1, 2, 3...)
     
-    # MultipleLines (3 categories: [1 0 2] in your data)
-    # We map the UI string to the expected integer value
+    # MultipleLines (3 categories: [1 0 2] in data)
     if multiple_lines == 'No':
-        encoded.append(1) # Assuming 'No' maps to 1
+        encoded.append(1) # 'No' maps to 1
     elif multiple_lines == 'Yes':
-        encoded.append(0) # Assuming 'Yes' maps to 0
+        encoded.append(0) # 'Yes' maps to 0
     else: # 'No phone service'
-        encoded.append(2) # Assuming 'No phone service' maps to 2
+        encoded.append(2) # 'No phone service' maps to 2
 
-    # InternetService (3 categories: [0 1 2] in your data)
+    # InternetService (3 categories: [0 1 2] in data)
     if internet_service == 'DSL':
-        encoded.append(0) # Assuming 'DSL' maps to 0
+        encoded.append(0) # 'DSL' maps to 0
     elif internet_service == 'Fiber optic':
-        encoded.append(1) # Assuming 'Fiber optic' maps to 1
+        encoded.append(1) # 'Fiber optic' maps to 1
     else: # 'No'
-        encoded.append(2) # Assuming 'No' maps to 2
+        encoded.append(2) # 'No' maps to 2
 
-    # Internet-related services (6 features, 3 categories each: [0 2 1] in your data)
-    # We use a consistent mapping for No/Yes/No Internet Service
+    # Internet-related services (6 features, 3 categories each: [0 2 1] in data)
+    # consistent mapping for No/Yes/No Internet Service
     service_mapping = {
-        'No': 0, # Assuming 'No' maps to 0
-        'Yes': 2, # Assuming 'Yes' maps to 2
-        'No internet service': 1 # Assuming 'No internet service' maps to 1
+        'No': 0, # 'No' maps to 0
+        'Yes': 2, #  'Yes' maps to 2
+        'No internet service': 1 # 'No internet service' maps to 1
     }
 
     services = [online_security, online_backup, device_protection, tech_support, streaming_tv, streaming_movies]
@@ -119,13 +113,13 @@ def encode_inputs(gender, senior_citizen, partner, dependents, phone_service, mu
 
     # Contract (3 categories: [0 1 2] in your data)
     if contract == 'Month-to-month':
-        encoded.append(0) # Assuming 'Month-to-month' maps to 0
+        encoded.append(0) # 'Month-to-month' maps to 0
     elif contract == 'One year':
-        encoded.append(1) # Assuming 'One year' maps to 1
+        encoded.append(1) # 'One year' maps to 1
     else: # 'Two year'
-        encoded.append(2) # Assuming 'Two year' maps to 2
+        encoded.append(2) # 'Two year' maps to 2
     
-    # PaymentMethod (4 categories: [2 3 0 1] in your data)
+    # PaymentMethod (4 categories: [2 3 0 1] in data)
     payment_mapping = {
         'Electronic check': 2,
         'Mailed check': 3,
@@ -134,8 +128,6 @@ def encode_inputs(gender, senior_citizen, partner, dependents, phone_service, mu
     }
     encoded.append(payment_mapping[payment_method])
     
-    # The final encoded list contains 3 (numerical) + 16 (categorical) = 19 features. 
-    # This assumes your model input vector is [3 numerical features] + [16 single-integer categorical features].
     return encoded
 
 if st.button("🔍 Predict Customer Churn"):
@@ -154,15 +146,12 @@ if st.button("🔍 Predict Customer Churn"):
         payment_method
     )
     
-    # Combine all features into a single input vector
     input_vector = np.array([numerical_features + categorical_features])
     
-    # Make prediction
     try:
         prediction = model.predict(input_vector)[0]
         prediction_proba = model.predict_proba(input_vector)[0]
         
-        # Display results
         if prediction == 1:
             st.error(f"🚨 High Churn Risk: **{prediction_proba[1]*100:.1f}%** probability of churn")
             st.warning("This customer is likely to churn. Consider retention strategies.")
@@ -170,7 +159,6 @@ if st.button("🔍 Predict Customer Churn"):
             st.success(f"✅ Low Churn Risk: **{prediction_proba[0]*100:.1f}%** probability of staying")
             st.info("This customer is likely to remain with the service.")
             
-        # Show probability breakdown
         st.subheader("Probability Breakdown")
         col_left, col_right = st.columns(2)
         with col_left:
