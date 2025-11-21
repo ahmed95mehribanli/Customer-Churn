@@ -3,7 +3,7 @@ import joblib
 import numpy as np
 
 # Load the model
-model = joblib.load('voting_classifier_coding.pkl')
+model = joblib.load('voting_classifier_model.pkl')
 
 st.set_page_config(page_title="Customer Churn Predictor", page_icon="📊")
 st.title("📊 Customer Churn Predictor")
