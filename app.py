@@ -2,7 +2,7 @@ import streamlit as st
 import joblib
 import numpy as np
 
-# Load the model
+# Load the model (ensure this file is in the same directory)
 model = joblib.load('voting_classifier_model.pkl')
 
 st.set_page_config(page_title="Customer Churn Predictor", page_icon="📊")
@@ -11,7 +11,7 @@ st.markdown("Use this app to predict **customer churn** based on customer detail
 
 st.header("👤 Enter Customer Details")
 
-# Personal Information
+# --- UI FOR INPUT COLLECTION ---
 col1, col2 = st.columns(2)
 with col1:
     gender = st.selectbox("Gender", ['Male', 'Female'])
@@ -32,6 +32,8 @@ paperless_billing = st.selectbox("Paperless Billing", ['No', 'Yes'])
 
 col5, col6 = st.columns(2)
 with col5:
+    # Assuming the numerical inputs were scaled/standardized during training, 
+    # but input is taken as raw values for simplicity here.
     monthly_charges = st.number_input("Monthly Charges ($)", min_value=18.0, max_value=120.0, value=50.0)
 with col6:
     total_charges = st.number_input("Total Charges ($)", min_value=0.0, max_value=10000.0, value=500.0)
@@ -67,78 +69,84 @@ payment_method = st.selectbox("Payment Method", [
 ])
 
 def encode_inputs(gender, senior_citizen, partner, dependents, phone_service, multiple_lines, 
-                 internet_service, online_security, online_backup, device_protection, 
-                 tech_support, streaming_tv, streaming_movies, contract, paperless_billing, 
-                 payment_method):
+                  internet_service, online_security, online_backup, device_protection, 
+                  tech_support, streaming_tv, streaming_movies, contract, paperless_billing, 
+                  payment_method):
     
-    # Encode binary features
+    # 1. Binary Features (0 or 1)
     encoded = []
-    encoded.append(1 if gender == 'Female' else 0)  # gender
-    encoded.append(1 if senior_citizen == 'Yes' else 0)  # SeniorCitizen
-    encoded.append(1 if partner == 'Yes' else 0)  # Partner
-    encoded.append(1 if dependents == 'Yes' else 0)  # Dependents
-    encoded.append(1 if phone_service == 'Yes' else 0)  # PhoneService
     
-    # Encode MultipleLines (3 categories)
-    if multiple_lines == 'No':
-        encoded.extend([1, 0, 0])
-    elif multiple_lines == 'Yes':
-        encoded.extend([0, 1, 0])
-    else:  # No phone service
-        encoded.extend([0, 0, 1])
+    # Assuming 'Female' = 1, 'Male' = 0
+    encoded.append(1 if gender == 'Female' else 0)
     
-    # Encode InternetService (3 categories)
-    if internet_service == 'DSL':
-        encoded.extend([1, 0, 0])
-    elif internet_service == 'Fiber optic':
-        encoded.extend([0, 1, 0])
-    else:  # No
-        encoded.extend([0, 0, 1])
-    
-    # Encode internet-related services (3 categories each)
-    services = [online_security, online_backup, device_protection, 
-                tech_support, streaming_tv, streaming_movies]
-    
-    for service in services:
-        if service == 'No':
-            encoded.extend([1, 0, 0])
-        elif service == 'Yes':
-            encoded.extend([0, 1, 0])
-        else:  # No internet service
-            encoded.extend([0, 0, 1])
-    
-    # Encode Contract (3 categories)
-    if contract == 'Month-to-month':
-        encoded.extend([1, 0, 0])
-    elif contract == 'One year':
-        encoded.extend([0, 1, 0])
-    else:  # Two year
-        encoded.extend([0, 0, 1])
-    
-    # Encode PaperlessBilling
+    # 'Yes' = 1, 'No' = 0 for other binary columns
+    encoded.append(1 if senior_citizen == 'Yes' else 0)
+    encoded.append(1 if partner == 'Yes' else 0)
+    encoded.append(1 if dependents == 'Yes' else 0)
+    encoded.append(1 if phone_service == 'Yes' else 0)
     encoded.append(1 if paperless_billing == 'Yes' else 0)
     
-    # Encode PaymentMethod (4 categories)
-    if payment_method == 'Electronic check':
-        encoded.extend([1, 0, 0, 0])
-    elif payment_method == 'Mailed check':
-        encoded.extend([0, 1, 0, 0])
-    elif payment_method == 'Bank transfer (automatic)':
-        encoded.extend([0, 0, 1, 0])
-    else:  # Credit card (automatic)
-        encoded.extend([0, 0, 0, 1])
+    # 2. Multi-Category Features (Label Encoding: 0, 1, 2, 3...)
     
+    # MultipleLines (3 categories: [1 0 2] in your data)
+    # We map the UI string to the expected integer value
+    if multiple_lines == 'No':
+        encoded.append(1) # Assuming 'No' maps to 1
+    elif multiple_lines == 'Yes':
+        encoded.append(0) # Assuming 'Yes' maps to 0
+    else: # 'No phone service'
+        encoded.append(2) # Assuming 'No phone service' maps to 2
+
+    # InternetService (3 categories: [0 1 2] in your data)
+    if internet_service == 'DSL':
+        encoded.append(0) # Assuming 'DSL' maps to 0
+    elif internet_service == 'Fiber optic':
+        encoded.append(1) # Assuming 'Fiber optic' maps to 1
+    else: # 'No'
+        encoded.append(2) # Assuming 'No' maps to 2
+
+    # Internet-related services (6 features, 3 categories each: [0 2 1] in your data)
+    # We use a consistent mapping for No/Yes/No Internet Service
+    service_mapping = {
+        'No': 0, # Assuming 'No' maps to 0
+        'Yes': 2, # Assuming 'Yes' maps to 2
+        'No internet service': 1 # Assuming 'No internet service' maps to 1
+    }
+
+    services = [online_security, online_backup, device_protection, tech_support, streaming_tv, streaming_movies]
+    for service in services:
+        encoded.append(service_mapping[service])
+
+    # Contract (3 categories: [0 1 2] in your data)
+    if contract == 'Month-to-month':
+        encoded.append(0) # Assuming 'Month-to-month' maps to 0
+    elif contract == 'One year':
+        encoded.append(1) # Assuming 'One year' maps to 1
+    else: # 'Two year'
+        encoded.append(2) # Assuming 'Two year' maps to 2
+    
+    # PaymentMethod (4 categories: [2 3 0 1] in your data)
+    payment_mapping = {
+        'Electronic check': 2,
+        'Mailed check': 3,
+        'Bank transfer (automatic)': 0,
+        'Credit card (automatic)': 1
+    }
+    encoded.append(payment_mapping[payment_method])
+    
+    # The final encoded list contains 3 (numerical) + 16 (categorical) = 19 features. 
+    # This assumes your model input vector is [3 numerical features] + [16 single-integer categorical features].
     return encoded
 
 if st.button("🔍 Predict Customer Churn"):
-    # Numerical features
+    # 1. Numerical features (Tenure, MonthlyCharges, TotalCharges)
     numerical_features = [
         tenure,
         monthly_charges,
         total_charges
     ]
     
-    # Categorical features
+    # 2. Categorical features (Encoded to single integers)
     categorical_features = encode_inputs(
         gender, senior_citizen, partner, dependents, phone_service, multiple_lines,
         internet_service, online_security, online_backup, device_protection,
@@ -146,25 +154,31 @@ if st.button("🔍 Predict Customer Churn"):
         payment_method
     )
     
-    # Combine all features
+    # Combine all features into a single input vector
     input_vector = np.array([numerical_features + categorical_features])
     
     # Make prediction
-    prediction = model.predict(input_vector)[0]
-    prediction_proba = model.predict_proba(input_vector)[0]
-    
-    # Display results
-    if prediction == 1:
-        st.error(f"🚨 High Churn Risk: **{prediction_proba[1]*100:.1f}%** probability of churn")
-        st.warning("This customer is likely to churn. Consider retention strategies.")
-    else:
-        st.success(f"✅ Low Churn Risk: **{prediction_proba[0]*100:.1f}%** probability of staying")
-        st.info("This customer is likely to remain with the service.")
-    
-    # Show probability breakdown
-    st.subheader("Probability Breakdown")
-    col_left, col_right = st.columns(2)
-    with col_left:
-        st.metric("Probability of Staying", f"{prediction_proba[0]*100:.1f}%")
-    with col_right:
-        st.metric("Probability of Churning", f"{prediction_proba[1]*100:.1f}%")
+    try:
+        prediction = model.predict(input_vector)[0]
+        prediction_proba = model.predict_proba(input_vector)[0]
+        
+        # Display results
+        if prediction == 1:
+            st.error(f"🚨 High Churn Risk: **{prediction_proba[1]*100:.1f}%** probability of churn")
+            st.warning("This customer is likely to churn. Consider retention strategies.")
+        else:
+            st.success(f"✅ Low Churn Risk: **{prediction_proba[0]*100:.1f}%** probability of staying")
+            st.info("This customer is likely to remain with the service.")
+            
+        # Show probability breakdown
+        st.subheader("Probability Breakdown")
+        col_left, col_right = st.columns(2)
+        with col_left:
+            st.metric("Probability of Staying", f"{prediction_proba[0]*100:.1f}%")
+        with col_right:
+            st.metric("Probability of Churning", f"{prediction_proba[1]*100:.1f}%")
+
+    except ValueError as e:
+        st.error("Error: The input vector size is incorrect.")
+        st.error(f"Expected input size mismatch. The array should have been shaped like the input data to your model. Current input size: {input_vector.shape}")
+        st.caption("Double-check the mappings in the `encode_inputs` function.")
